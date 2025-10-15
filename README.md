@@ -40,3 +40,5 @@ Backend działa na http://localhost:3000
 6. Uruchom frontend:
 Skonfiguruj serwer WWW (np. Apache2/Nginx lub XAMPP).
 Skopiuj folder frontend do katalogu serwera (np. htdocs w XAMPP).
+
+![preview](https://github.com/Sassaspekt/BooksDB/blob/main/preview.png?raw=true)
