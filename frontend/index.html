@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zarządzanie książkami</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 5px 10px; margin: 5px; }
+        form { margin: 20px 0; }
+        input { margin: 5px; padding: 5px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Zarządzanie książkami</h1>
+    <form id="bookForm">
+        <input type="hidden" id="bookId">
+        <input type="text" id="title" placeholder="Tytuł" required>
+        <input type="date" id="publication_date" placeholder="Data publikacji" required>
+        <input type="number" id="pages" placeholder="Liczba stron" min="1" required>
+        <button type="submit">Zapisz</button>
+        <button type="button" id="cancelEdit" style="display:none;">Anuluj</button>
+    </form>
+    <div id="error" class="error"></div>
+    <table id="bookTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tytuł</th>
+                <th>Data publikacji</th>
+                <th>Liczba stron</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody id="bookList"></tbody>
+    </table>
+
+    <script>
+        const API_URL = 'http://localhost:3000/books';
+
+        async function fetchBooks() {
+            const response = await fetch(API_URL);
+            const books = await response.json();
+            const bookList = document.getElementById('bookList');
+            bookList.innerHTML = '';
+            books.forEach(book => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${book.id}</td>
+                    <td>${book.title}</td>
+                    <td>${book.publication_date}</td>
+                    <td>${book.pages}</td>
+                    <td>
+                        <button onclick="editBook(${book.id}, '${book.title.replace(/'/g, "\\'")}', '${book.publication_date}', ${book.pages})">Edytuj</button>
+                        <button onclick="deleteBook(${book.id})">Usuń</button>
+                    </td>
+                `;
+                bookList.appendChild(row);
+            });
+        }
+
+        async function saveBook(event) {
+            event.preventDefault();
+            const id = document.getElementById('bookId').value;
+            const book = {
+                title: document.getElementById('title').value,
+                publication_date: document.getElementById('publication_date').value,
+                pages: parseInt(document.getElementById('pages').value)
+            };
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '';
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_URL}/${id}` : API_URL;
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(book)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+                document.getElementById('bookForm').reset();
+                document.getElementById('bookId').value = '';
+                document.getElementById('cancelEdit').style.display = 'none';
+                fetchBooks();
+            } catch (error) {
+                errorDiv.textContent = error.message;
+            }
+        }
+
+        function editBook(id, title, publication_date, pages) {
+            document.getElementById('bookId').value = id;
+            document.getElementById('title').value = title;
+            document.getElementById('publication_date').value = publication_date;
+            document.getElementById('pages').value = pages;
+            document.getElementById('cancelEdit').style.display = 'inline';
+        }
+
+        async function deleteBook(id) {
+            if (confirm('Czy na pewno chcesz usunąć tę książkę?')) {
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error);
+                    }
+                    fetchBooks();
+                } catch (error) {
+                    document.getElementById('error').textContent = error.message;
+                }
+            }
+        }
+
+        document.getElementById('bookForm').addEventListener('submit', saveBook);
+        document.getElementById('cancelEdit').addEventListener('click', () => {
+            document.getElementById('bookForm').reset();
+            document.getElementById('bookId').value = '';
+            document.getElementById('cancelEdit').style.display = 'none';
+        });
+
+        fetchBooks();
+    </script>
+</body>
+</html>
