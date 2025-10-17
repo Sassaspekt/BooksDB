@@ -27,6 +27,12 @@ const validateBook = (book) => {
     if (!book.pages || !Number.isInteger(book.pages) || book.pages <= 0) {
         return 'Pages must be a positive integer';
     }
+    if (!book.author || typeof book.author !== 'string' || book.author.length > 100) {
+        return 'Author is required and must be a string (max 100 chars)';
+    }
+    if (!book.rate || !Number.isInteger(book.rate) || book.rate < 1 || book.rate > 5) {
+        return 'Rate must be an integer between 1 and 5';
+    }
     return null;
 };
 
@@ -34,6 +40,8 @@ const validateBook = (book) => {
 app.get('/books', (req, res) => {
     pool.query('SELECT * FROM books', (error, results) => {
         if (error) {
+            // Log the error for debugging, but return a generic message to the client
+            console.error('Database error in GET /books:', error);
             return res.status(500).json({ error: 'Server error' });
         }
         res.status(200).json(results);
@@ -48,6 +56,7 @@ app.get('/books/:id', (req, res) => {
     }
     pool.query('SELECT * FROM books WHERE id = ?', [id], (error, results) => {
         if (error) {
+            console.error('Database error in GET /books/:id:', error);
             return res.status(500).json({ error: 'Server error' });
         }
         if (results.length === 0) {
@@ -65,10 +74,11 @@ app.post('/books', (req, res) => {
         return res.status(400).json({ error });
     }
     pool.query(
-        'INSERT INTO books (title, publication_date, pages) VALUES (?, ?, ?)',
-        [book.title, book.publication_date, book.pages],
+        'INSERT INTO books (title, publication_date, pages, author, rate) VALUES (?, ?, ?, ?, ?)',
+        [book.title, book.publication_date, book.pages, book.author, book.rate],
         (error, result) => {
             if (error) {
+                console.error('Database error in POST /books:', error);
                 return res.status(500).json({ error: 'Server error' });
             }
             res.status(201).json({ id: result.insertId, ...book });
@@ -88,10 +98,11 @@ app.put('/books/:id', (req, res) => {
         return res.status(400).json({ error });
     }
     pool.query(
-        'UPDATE books SET title = ?, publication_date = ?, pages = ? WHERE id = ?',
-        [book.title, book.publication_date, book.pages, id],
+        'UPDATE books SET title = ?, publication_date = ?, pages = ?, author = ?, rate = ? WHERE id = ?',
+        [book.title, book.publication_date, book.pages, book.author, book.rate, id],
         (error, result) => {
             if (error) {
+                console.error('Database error in PUT /books/:id:', error);
                 return res.status(500).json({ error: 'Server error' });
             }
             if (result.affectedRows === 0) {
@@ -110,6 +121,7 @@ app.delete('/books/:id', (req, res) => {
     }
     pool.query('DELETE FROM books WHERE id = ?', [id], (error, result) => {
         if (error) {
+            console.error('Database error in DELETE /books/:id:', error);
             return res.status(500).json({ error: 'Server error' });
         }
         if (result.affectedRows === 0) {

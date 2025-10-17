@@ -5,14 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zarządzanie książkami</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        button { padding: 5px 10px; margin: 5px; }
-        form { margin: 20px 0; }
-        input { margin: 5px; padding: 5px; }
-        .error { color: red; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 5px 10px;
+            margin: 5px;
+        }
+
+        form {
+            margin: 20px 0;
+        }
+
+        input {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        .error {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -22,6 +51,8 @@
         <input type="text" id="title" placeholder="Tytuł" required>
         <input type="date" id="publication_date" placeholder="Data publikacji" required>
         <input type="number" id="pages" placeholder="Liczba stron" min="1" required>
+        <input type="text" id="author" placeholder="Autor" required>
+        <input type="number" id="rate" placeholder="Ocena (1-5)" min="1" max="5" required>
         <button type="submit">Zapisz</button>
         <button type="button" id="cancelEdit" style="display:none;">Anuluj</button>
     </form>
@@ -33,6 +64,8 @@
                 <th>Tytuł</th>
                 <th>Data publikacji</th>
                 <th>Liczba stron</th>
+                <th>Autor</th>
+                <th>Ocena</th>
                 <th>Akcje</th>
             </tr>
         </thead>
@@ -50,15 +83,22 @@
             books.forEach(book => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${book.id}</td>
-                    <td>${book.title}</td>
-                    <td>${book.publication_date}</td>
-                    <td>${book.pages}</td>
-                    <td>
-                        <button onclick="editBook(${book.id}, '${book.title.replace(/'/g, "\\'")}', '${book.publication_date}', ${book.pages})">Edytuj</button>
-                        <button onclick="deleteBook(${book.id})">Usuń</button>
-                    </td>
-                `;
+                        <td>${book.id}</td>
+                        <td>${book.title}</td>
+                        <td>${book.publication_date}</td>
+                        <td>${book.pages}</td>
+                        <td>${book.author}</td>
+                        <td>${book.rate}</td>
+                        <td>
+                            <button onclick="editBook(${book.id},
+                                                        '${book.title.replace(/'/g, "\\'")}',
+                                                        '${book.publication_date}',
+                                                        ${book.pages},
+                                                        '${book.author.replace(/'/g, "\\'")}',
+                                                        ${book.rate})">Edytuj</button>
+                            <button onclick="deleteBook(${book.id})">Usuń</button>
+                        </td>
+                    `;
                 bookList.appendChild(row);
             });
         }
@@ -69,7 +109,9 @@
             const book = {
                 title: document.getElementById('title').value,
                 publication_date: document.getElementById('publication_date').value,
-                pages: parseInt(document.getElementById('pages').value)
+                pages: parseInt(document.getElementById('pages').value),
+                author: document.getElementById('author').value,
+                rate: parseInt(document.getElementById('rate').value)
             };
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = '';
@@ -95,11 +137,13 @@
             }
         }
 
-        function editBook(id, title, publication_date, pages) {
+        function editBook(id, title, publication_date, pages, author, rate) {
             document.getElementById('bookId').value = id;
             document.getElementById('title').value = title;
             document.getElementById('publication_date').value = publication_date;
             document.getElementById('pages').value = pages;
+            document.getElementById('author').value = author;
+            document.getElementById('rate').value = rate;
             document.getElementById('cancelEdit').style.display = 'inline';
         }
 
