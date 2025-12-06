@@ -1,3 +1,4 @@
+Ещё Илья, [06.12.2025 17:44]
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -5,47 +6,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zarządzanie książkami</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        button {
-            padding: 5px 10px;
-            margin: 5px;
-        }
-
-        form {
-            margin: 20px 0;
-        }
-
-        input {
-            margin: 5px;
-            padding: 5px;
-        }
-
-        .error {
-            color: red;
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 5px 10px; margin: 5px; }
+        form { margin: 20px 0; }
+        input { margin: 5px; padding: 5px; }
+        .error { color: red; }
+        .logout-btn { background-color: #f44336; color: white; border: none; cursor: pointer; }
+        .logout-btn:hover { background-color: #d32f2f; }
+        
+        /* Виджет валют */
+        #currency-widget {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #4CAF50;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Zarządzanie książkami</h1>
+    <div class="header">
+        <h1>Zarządzanie książkami</h1>
+        <div class="user-info">
+            <span>Użytkownik: <strong id="username"></strong></span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="currency-widget">
+        <strong>Kursy Walut (NBP):</strong> 
+        <span id="currency-content">Ładowanie...</span>
+    </div>
+
     <form id="bookForm">
         <input type="hidden" id="bookId">
         <input type="text" id="title" placeholder="Tytuł" required>
@@ -60,47 +58,73 @@
     <table id="bookTable">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Tytuł</th>
-                <th>Data publikacji</th>
-                <th>Liczba stron</th>
-                <th>Autor</th>
-                <th>Ocena</th>
-                <th>Akcje</th>
+                <th>ID</th><th>Tytuł</th><th>Data publikacji</th><th>Liczba stron</th><th>Autor</th><th>Ocena</th><th>Akcje</th>
             </tr>
         </thead>
         <tbody id="bookList"></tbody>
     </table>
 
     <script>
-        const API_URL = 'http://localhost:3000/books';
+        const API_URL = 'https://bachynski-crud-api.novanautilus.net';
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            return token ? { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} } : null;
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            if (!token || !username) { window.location.href = 'login.html'; return false; }
+            document.getElementById('username').textContent = username;
+            return true;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+
+        async function fetchCurrency() {
+            try {
+                const response = await fetch(${API_URL}/currency);
+                if (!response.ok) return;
+                const data = await response.json();
+                const widget = document.getElementById('currency-widget');
+                const content = document.getElementById('currency-content');
+                widget.style.display = 'block';
+
+Ещё Илья, [06.12.2025 17:44]
+content.innerHTML = 
+                    EUR: <b>${data.eur} PLN</b> | 
+                    USD: <b>${data.usd} PLN</b> 
+                    <small style="color: #666; margin-left: 10px;">(z dnia: ${data.date})</small>
+                ;
+            } catch (error) { console.error('Currency widget error:', error); }
+        }
 
         async function fetchBooks() {
-            const response = await fetch(API_URL);
-            const books = await response.json();
-            const bookList = document.getElementById('bookList');
-            bookList.innerHTML = '';
-            books.forEach(book => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                        <td>${book.id}</td>
-                        <td>${book.title}</td>
-                        <td>${book.publication_date}</td>
-                        <td>${book.pages}</td>
-                        <td>${book.author}</td>
-                        <td>${book.rate}</td>
+            try {
+                const headers = getAuthHeaders();
+                if (!headers) { window.location.href = 'login.html'; return; }
+                const response = await fetch(${API_URL}/books, { headers });
+                if (response.status === 401) return logout();
+                const books = await response.json();
+                const bookList = document.getElementById('bookList');
+                bookList.innerHTML = '';
+                books.forEach(book => {
+                    const row = document.createElement('tr');
+                    const pubDate = new Date(book.publication_date).toISOString().split('T')[0];
+                    row.innerHTML = 
+                        <td>${book.id}</td><td>${book.title}</td><td>${pubDate}</td><td>${book.pages}</td><td>${book.author}</td><td>${book.rate}</td>
                         <td>
-                            <button onclick="editBook(${book.id},
-                                                        '${book.title.replace(/'/g, "\\'")}',
-                                                        '${book.publication_date}',
-                                                        ${book.pages},
-                                                        '${book.author.replace(/'/g, "\\'")}',
-                                                        ${book.rate})">Edytuj</button>
+                            <button onclick="editBook(${book.id}, '${book.title.replace(/'/g, "\\'")}', '${pubDate}', ${book.pages}, '${book.author.replace(/'/g, "\\'")}', ${book.rate})">Edytuj</button>
                             <button onclick="deleteBook(${book.id})">Usuń</button>
-                        </td>
-                    `;
-                bookList.appendChild(row);
-            });
+                        </td>;
+                    bookList.appendChild(row);
+                });
+            } catch (error) { console.error('Fetch books error:', error); }
         }
 
         async function saveBook(event) {
@@ -113,28 +137,20 @@
                 author: document.getElementById('author').value,
                 rate: parseInt(document.getElementById('rate').value)
             };
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = '';
-
             try {
+                const headers = getAuthHeaders();
+                if (!headers) { window.location.href = 'login.html'; return; }
                 const method = id ? 'PUT' : 'POST';
-                const url = id ? `${API_URL}/${id}` : API_URL;
-                const response = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(book)
-                });
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error);
-                }
+                const url = id ? ${API_URL}/books/${id} : ${API_URL}/books;
+                const response = await fetch(url, { method, headers, body: JSON.stringify(book) });
+                if (response.status === 401) return logout();
+                if (!response.ok) throw new Error((await response.json()).error);
+                
                 document.getElementById('bookForm').reset();
                 document.getElementById('bookId').value = '';
                 document.getElementById('cancelEdit').style.display = 'none';
                 fetchBooks();
-            } catch (error) {
-                errorDiv.textContent = error.message;
-            }
+            } catch (error) { document.getElementById('error').textContent = error.message; }
         }
 
         function editBook(id, title, publication_date, pages, author, rate) {
@@ -150,15 +166,15 @@
         async function deleteBook(id) {
             if (confirm('Czy na pewno chcesz usunąć tę książkę?')) {
                 try {
-                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error);
-                    }
+
+Ещё Илья, [06.12.2025 17:44]
+const headers = getAuthHeaders();
+                    if (!headers) { window.location.href = 'login.html'; return; }
+                    const response = await fetch(${API_URL}/books/${id}, { method: 'DELETE', headers });
+                    if (response.status === 401) return logout();
+                    if (!response.ok) throw new Error((await response.json()).error);
                     fetchBooks();
-                } catch (error) {
-                    document.getElementById('error').textContent = error.message;
-                }
+                } catch (error) { document.getElementById('error').textContent = error.message; }
             }
         }
 
@@ -169,7 +185,13 @@
             document.getElementById('cancelEdit').style.display = 'none';
         });
 
-        fetchBooks();
+        function init() {
+            if (checkAuth()) {
+                fetchCurrency();
+                fetchBooks();
+            }
+        }
+        init();
     </script>
 </body>
 </html>
