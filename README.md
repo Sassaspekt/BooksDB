@@ -42,3 +42,23 @@ Skonfiguruj serwer WWW (np. Apache2/Nginx lub XAMPP).
 Skopiuj folder frontend do katalogu serwera (np. htdocs w XAMPP).
 
 ![preview](https://github.com/Sassaspekt/BooksDB/blob/main/preview.png?raw=true)
+
+---
+## 🌍 Integracja z API Walutowym (Zadanie B)
+
+Aplikacja integruje się z zewnętrznym API NBP (Narodowy Bank Polski) w celu pobierania aktualnych kursów walut.
+
+### Nowy Endpoint (Backend)
+
+**Pobranie aktualnych kursów**
+* **URL:** `/currency`
+* **Metoda:** `GET`
+* **Opis:** Pobiera dane z NBP i zwraca przefiltrowane kursy dla EUR i USD.
+
+**Przykładowa odpowiedź (JSON):**
+```json
+{
+  "date": "2025-12-08",
+  "eur": 4.2321,
+  "usd": 3.6313
+}
